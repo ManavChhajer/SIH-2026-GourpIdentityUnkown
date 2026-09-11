@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import db
+import government_records
+from dummy_plot_fixtures import get_dummy_fixture
 from fixtures import pick_fixture
 
 app = FastAPI(title="Land Record Digitizer — Mock API")
@@ -104,6 +106,48 @@ def get_document(document_id: str):
     if not doc:
         raise HTTPException(status_code=404, detail="document not found")
     return doc
+
+
+# ---------- dummy plot upload + government records (for judge demo / AI-accuracy review) ----------
+
+class DummyUploadPayload(BaseModel):
+    plot_id: int
+
+
+@app.post("/api/documents/dummy-upload")
+def dummy_upload(payload: DummyUploadPayload):
+    fixture = get_dummy_fixture(payload.plot_id)
+    if not fixture:
+        raise HTTPException(status_code=404, detail="unknown plot_id — expected 1-4")
+
+    confidences = [f["confidence"] for f in fixture["fields"]]
+    overall_confidence = round(sum(confidences) / len(confidences), 2)
+    review_required = fixture["review_required"]
+
+    document_id = f"doc_{uuid.uuid4().hex[:8]}"
+    record = db.create_document(
+        document_id=document_id,
+        filename=f"dummy_plot_{payload.plot_id}.jpg",
+        fields=fixture["fields"],
+        overall_confidence=overall_confidence,
+        review_required=review_required,
+        status="pending_review" if review_required else "auto_approved",
+        plot_id=str(payload.plot_id),
+    )
+    return record
+
+
+@app.get("/api/government-records")
+def list_govt_records():
+    return {"records": government_records.list_government_records()}
+
+
+@app.get("/api/government-records/{plot_id}")
+def get_govt_record(plot_id: int):
+    record = government_records.get_government_record(plot_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="unknown plot_id — expected 1-4")
+    return record
 
 
 @app.post("/api/documents/{document_id}/approve")

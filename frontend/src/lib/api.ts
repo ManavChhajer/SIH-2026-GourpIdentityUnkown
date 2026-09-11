@@ -21,6 +21,19 @@ export interface AnalyzeResult {
   status: DocumentStatus;
   boundary: number[][] | null;
   owner_username: string | null;
+  plot_id: string | null;
+}
+
+export interface GovernmentRecord {
+  plot_id: number;
+  plot_label: string;
+  khata_no: string;
+  khasra_no: string;
+  survey_no: string;
+  owner_name: string;
+  area: string;
+  mutation: string;
+  on_file_since: string;
 }
 
 export interface AuthResult {
@@ -120,5 +133,21 @@ export async function saveBoundary(
     body: JSON.stringify({ points }),
   });
   if (!response.ok) throw new Error("Save boundary failed");
+  return response.json();
+}
+
+export async function dummyUpload(plotId: number): Promise<AnalyzeResult> {
+  const response = await fetch(`${API_BASE_URL}/api/documents/dummy-upload`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ plot_id: plotId }),
+  });
+  if (!response.ok) throw new Error("Dummy upload failed");
+  return response.json();
+}
+
+export async function getGovernmentRecord(plotId: string | number): Promise<GovernmentRecord> {
+  const response = await fetch(`${API_BASE_URL}/api/government-records/${plotId}`);
+  if (!response.ok) throw new Error("Government record not found");
   return response.json();
 }

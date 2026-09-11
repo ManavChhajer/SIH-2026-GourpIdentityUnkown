@@ -6,8 +6,10 @@ import Link from "next/link";
 import {
   approveDocument,
   getDocument,
+  getGovernmentRecord,
   saveBoundary,
   type AnalyzeResult,
+  type GovernmentRecord,
 } from "@/lib/api";
 
 const CANVAS_W = 600;
@@ -24,6 +26,7 @@ export default function ReviewDocument() {
   const [mode, setMode] = useState<"view" | "draw">("view");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [govRecord, setGovRecord] = useState<GovernmentRecord | null>(null);
   const bgImageRef = useRef<HTMLImageElement | null>(null);
   const [bgLoaded, setBgLoaded] = useState(false);
 
@@ -51,6 +54,14 @@ export default function ReviewDocument() {
     const d = await getDocument(params.id);
     setDoc(d);
     if (d.boundary) setPoints(d.boundary);
+    if (d.plot_id) {
+      try {
+        const record = await getGovernmentRecord(d.plot_id);
+        setGovRecord(record);
+      } catch {
+        setGovRecord(null);
+      }
+    }
   }
 
   useEffect(() => {
@@ -239,6 +250,54 @@ export default function ReviewDocument() {
               </tbody>
             </table>
           </div>
+
+          {govRecord && (
+            <div className="bg-white rounded-2xl border border-indigo-200 p-5">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="font-semibold text-sm">🏛 AI vs. Official Government Record</h2>
+              </div>
+              <p className="text-xs text-slate-500 mb-3">
+                {govRecord.plot_label} &middot; on file since {govRecord.on_file_since}. Use this
+                to check whether the AI extracted the fields correctly.
+              </p>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-slate-400 text-[10px] uppercase tracking-wide">
+                    <th className="text-left py-1.5">Field</th>
+                    <th className="text-left py-1.5">AI extracted</th>
+                    <th className="text-left py-1.5">Government record</th>
+                    <th className="text-right py-1.5">Match</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {doc.fields.map((f) => {
+                    const govKey = f.name as keyof GovernmentRecord;
+                    const govValue = govRecord[govKey] as string | undefined;
+                    const isMatch =
+                      govValue !== undefined &&
+                      govValue.toString().trim().toLowerCase() ===
+                        f.value.toString().trim().toLowerCase();
+                    return (
+                      <tr key={f.name} className="border-t border-slate-100">
+                        <td className="py-2 text-slate-500">{f.label}</td>
+                        <td className="py-2 font-medium">{f.value}</td>
+                        <td className="py-2 font-medium">{govValue ?? "—"}</td>
+                        <td className="py-2 text-right">
+                          {govValue === undefined ? (
+                            <span className="text-slate-300">n/a</span>
+                          ) : isMatch ? (
+                            <span className="text-emerald-600 font-bold">✓ match</span>
+                          ) : (
+                            <span className="text-rose-600 font-bold">✗ mismatch</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
             <h2 className="font-semibold text-sm mb-1">Executive decision</h2>

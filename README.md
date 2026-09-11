@@ -29,6 +29,7 @@ Scoping estimate (functional-prototype tier, not built now): `.hermes/plans/2026
 | 12. Gov Employee Portal (login + review + approve/hand-draw boundary) | ✅ Done — `/review/login`, `/review`, `/review/[id]`, verified live end-to-end |
 | 13. SQLite persistence (replace in-memory store) | ✅ Done — `backend/db.py` (SQLAlchemy), 15/15 tests passing, verified data survives a real backend restart |
 | 14. Uploader accounts (signup/login, "My Documents") | ✅ Done — `/account/login`, `/account`, real password-hashed accounts in SQLite, 24/24 tests passing, verified live end-to-end |
+| 15. Dummy upload for 4 plots + official government records for AI-accuracy review | ✅ Done — one-click dummy uploads, side-by-side AI-vs-government comparison table on the review page, verified live (2 clean matches + 2 deliberate AI errors caught) |
 
 **Live verification performed this session:**
 - `pytest` in `backend/`: **5 passed**
@@ -172,16 +173,47 @@ automatic `OPTIONS` preflight request that carries the custom `X-Auth-Token`
 header — every authenticated upload failed with "Failed to fetch" until
 this was widened to `allow_methods=["*"]`. Also had to delete a stale
 `land_records.db` created before the `users` table existed (SQLAlchemy
-`create_all` doesn't migrate existing tables) — a stale local DB from
-before this change will 500 on any auth-related call until deleted.
+`create_all` doesn't migrate existing tables) — a stale local
+`land_records.db` created before this change will 500 on any auth-related call until deleted.
+
+## Dummy uploads + AI-vs-government-record accuracy check
+
+The `dummy-land.svg` shown on the reviewer's boundary canvas has 4 distinct
+plots (labeled A–D, north-west/north-east/south-west/south-east). Each now
+has:
+- A **pre-made AI extraction result** (`backend/dummy_plot_fixtures.py`) —
+  2 plots (A, B) are clean/high-confidence, 2 plots (C, D) have a
+  **deliberate AI mistake** (a digit or status misread) with correspondingly
+  lower confidence on that field, so there's something real to catch.
+- A matching **official government record** (`backend/government_records.py`)
+  — the "ground truth" already on file, independent of whatever the AI
+  extracted from a scan.
+
+**How to use it:**
+1. On `/`, under "Or try a dummy scan", click Plot A/B/C/D — this calls
+   `POST /api/documents/dummy-upload` and creates a document exactly like a
+   real upload would (same pending/auto-approved logic).
+2. In the Gov Employee Portal (`/review/[id]`), if the document came from a
+   dummy plot, a **"🏛 AI vs. Official Government Record"** panel appears
+   below the extracted fields — a per-field comparison table showing the
+   AI's value, the government's on-file value, and a ✓ match / ✗ mismatch
+   flag, so the reviewer can actually verify the AI is working correctly
+   instead of taking it on faith.
+
+**Verified live**: dummy-uploaded Plot C (has 2 seeded AI errors) — the
+comparison table correctly flagged `khasra_no` (AI said `901/D`, government
+record says `901/B`) and `area` (AI said `4.60`, government record says
+`4.00`) as `✗ mismatch`, with the other 4 fields correctly `✓ match`.
+Separately verified Plot B (clean fixture, no seeded errors) — all 6 fields
+showed `✓ match`.
 
 ## Structure
 
 ```
 2026-09-11_SIH/
-  backend/       FastAPI mock API (fixtures.py, main.py, db.py, tests) — venv included, gitignored
+  backend/       FastAPI mock API (fixtures.py, main.py, db.py, government_records.py, dummy_plot_fixtures.py, tests) — venv included, gitignored
                  SQLite-backed (land_records.db, gitignored — runtime data) via SQLAlchemy
-                 /api/analyze, /api/documents(+approve/boundary)
+                 /api/analyze, /api/documents(+approve/boundary/dummy-upload), /api/government-records
   frontend/      Next.js + TypeScript + Tailwind app (App Router)
     src/lib/api.ts          typed fetch client (analyze/list/get/approve/boundary/auth)
     src/lib/useAuth.ts      localStorage-backed auth hook for uploader accounts

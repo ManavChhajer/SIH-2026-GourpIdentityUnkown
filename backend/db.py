@@ -47,6 +47,7 @@ class Document(Base):
     status = Column(String, nullable=False)
     boundary_json = Column(Text, nullable=True)  # JSON-encoded list[[x,y]] or null
     owner_username = Column(String, ForeignKey("users.username"), nullable=True)
+    plot_id = Column(String, nullable=True)  # links to a dummy plot (1-4) for gov-record comparison
 
 
 def init_db() -> None:
@@ -124,6 +125,7 @@ def _row_to_dict(row: Document) -> dict:
         "status": row.status,
         "boundary": json.loads(row.boundary_json) if row.boundary_json else None,
         "owner_username": row.owner_username,
+        "plot_id": row.plot_id,
     }
 
 
@@ -135,6 +137,7 @@ def create_document(
     review_required: bool,
     status: str,
     owner_username: Optional[str] = None,
+    plot_id: Optional[str] = None,
 ) -> dict:
     db = get_session()
     try:
@@ -148,6 +151,7 @@ def create_document(
             status=status,
             boundary_json=None,
             owner_username=owner_username,
+            plot_id=plot_id,
         )
         db.add(row)
         db.commit()

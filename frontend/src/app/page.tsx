@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { analyzeDocument, type AnalyzeResult } from "@/lib/api";
+import { analyzeDocument, dummyUpload, type AnalyzeResult } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
 import Link from "next/link";
 
@@ -45,6 +45,19 @@ export default function Home() {
     setError(null);
     try {
       const res = await analyzeDocument(file);
+      setResult(res);
+      setStatus("done");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error");
+      setStatus("error");
+    }
+  }
+
+  async function handleDummyUpload(plotId: number) {
+    setStatus("loading");
+    setError(null);
+    try {
+      const res = await dummyUpload(plotId);
       setResult(res);
       setStatus("done");
     } catch (e) {
@@ -146,6 +159,33 @@ export default function Home() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {status === "idle" && (
+          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
+            <h2 className="text-sm font-semibold text-slate-700 mb-1">
+              Or try a dummy scan (for demo purposes)
+            </h2>
+            <p className="text-xs text-slate-500 mb-4">
+              Simulates uploading a scan of one of the 4 dummy plots on the
+              reviewer's land image — each has a pre-made AI extraction
+              result and a matching official government record for the Gov
+              Employee Portal to compare against.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map((plotId) => (
+                <button
+                  key={plotId}
+                  onClick={() => handleDummyUpload(plotId)}
+                  className="rounded-lg border border-slate-300 bg-slate-50 hover:bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 text-center"
+                >
+                  Plot {String.fromCharCode(64 + plotId)}
+                  <br />
+                  <span className="text-[10px] font-normal text-slate-400">dummy_plot_{plotId}.jpg</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
