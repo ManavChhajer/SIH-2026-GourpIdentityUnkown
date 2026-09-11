@@ -24,6 +24,9 @@ Scoping estimate (functional-prototype tier, not built now): `.hermes/plans/2026
 | 7. Scaffold Next.js frontend | ✅ Done (TypeScript + Tailwind + App Router) |
 | 8. Typed API client | ✅ Done — `frontend/src/lib/api.ts` |
 | 9. Upload/results page | ✅ Done — `frontend/src/app/page.tsx`, verified live in real browser |
+| 10. 5 mockups mounted as `/UIn/home` routes | ✅ Done — deletable independently, no separate server |
+| 11. Pending-review status + doc store (backend) | ✅ Done — `/api/documents`, `/approve`, `/boundary` endpoints, 10/10 tests passing |
+| 12. Gov Employee Portal (login + review + approve/hand-draw boundary) | ✅ Done — `/review/login`, `/review`, `/review/[id]`, verified live end-to-end |
 
 **Live verification performed this session:**
 - `pytest` in `backend/`: **5 passed**
@@ -72,15 +75,56 @@ code changes needed.
 Same Next.js dev server as the live app (`npm run dev` in `frontend/`,
 already covered above) — no separate server needed.
 
+## Gov Employee Portal — review, approve, or hand-draw boundary
+
+New second surface for low-confidence documents: a login-gated portal where
+a government employee makes the executive call on any `pending_review` doc
+— either **approve as-is**, or **hand-draw the parcel boundary** with a
+dot-and-line canvas tool (click to drop points, auto-connected as a
+polygon).
+
+| Route | Purpose |
+|---|---|
+| `/review/login` | Demo login (any non-empty employee ID + password works — mocked auth, `sessionStorage`-based, no real backend auth) |
+| `/review` | Queue dashboard — pending vs resolved documents, live-refreshable |
+| `/review/[id]` | Single-document review: extracted fields, confidence, and the boundary canvas + Approve button |
+
+**Backend additions supporting this** (`backend/main.py`):
+- In-memory `DOCUMENTS` store — every `/api/analyze` call now also saves a
+  record with a `status` field (`auto_approved` | `pending_review` |
+  `approved` | `boundary_drawn`) and `boundary` (null until hand-drawn).
+- `GET /api/documents` (optional `?status=` filter), `GET /api/documents/{id}`,
+  `POST /api/documents/{id}/approve`, `POST /api/documents/{id}/boundary`
+  (`{"points": [[x,y], ...]}`, requires 3+ points).
+- 10/10 backend tests passing (`pytest -v` in `backend/`).
+
+**Verified live end-to-end** (real browser session, not simulated):
+uploaded a low-confidence scan on `/` → showed "⏳ Pending review" status →
+logged into `/review/login` → saw it in the pending queue on `/review` →
+opened it, clicked "Draw boundary", placed 4 points on the canvas (dots +
+connecting lines rendered), saved → status flipped to `boundary_drawn`.
+Separately approved a second pending doc via "Approve as-is" → status
+flipped to `approved`. Dashboard's "Resolved" section correctly showed
+both outcomes afterward.
+
+**Known limitation (mocked tier):** login is not real auth — any
+credentials work, session is just a `sessionStorage` flag with no
+server-side validation or token. Fine for a demo, not for production.
+
 ## Structure
 
 ```
 2026-09-11_SIH/
   backend/       FastAPI mock API (fixtures.py, main.py, tests) — venv included, gitignored
+                 in-memory DOCUMENTS store, /api/analyze, /api/documents(+approve/boundary)
   frontend/      Next.js + TypeScript + Tailwind app (App Router)
-    src/lib/api.ts     typed fetch client for /api/analyze
-    src/app/page.tsx   upload -> loading -> results UI
-  mockups/       (reserved — design comparison pages, not built; skipped this pass)
+    src/lib/api.ts          typed fetch client (analyze/list/get/approve/boundary)
+    src/app/page.tsx        public upload -> loading -> results UI, shows pending status
+    src/app/UI1..5/home/    5 mockup design directions (iframe of public/mockups/*.html)
+    src/app/review/login/   gov employee demo login
+    src/app/review/         review queue dashboard
+    src/app/review/[id]/    single-doc review: fields + boundary canvas + approve
+  mockups/       original 5 static HTML design comparisons (source of truth; copies live in frontend/public/mockups/)
   IDEA.md        Original one-line idea pointer
   README.md      This file
 ```
