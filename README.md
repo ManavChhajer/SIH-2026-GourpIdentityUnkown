@@ -16,7 +16,7 @@ Scoping estimate (functional-prototype tier, not built now): `.hermes/plans/2026
 | Task | Status |
 |---|---|
 | 1. Scaffold `backend/`, `mockups/` dirs | ✅ Done |
-| 2. 5 UI mockup directions | ⏭️ Skipped — went straight to a working default UI instead (clean slate/table style) |
+| 2. 5 UI mockup directions | ✅ Done — see `mockups/`, verified live in browser (all 5 interactive) |
 | 3. FastAPI skeleton + `/health` | ✅ Done — verified `curl localhost:8000/health` → `{"status":"ok"}` |
 | 4. Fixture data module (TDD) | ✅ Done — 3/3 tests passing |
 | 5. `/api/analyze` endpoint (TDD) | ✅ Done — 2/2 tests passing (5/5 total backend tests) |
@@ -32,6 +32,26 @@ Scoping estimate (functional-prototype tier, not built now): `.hermes/plans/2026
 - Real browser test (upload a file via the actual page): loading spinner →
   results table → "Needs review" banner rendered correctly with live data
   from the backend (confidence badges color-coded green/amber/red).
+- All 5 `mockups/*.html` opened + click-driven through Upload → Processing →
+  Results in a real browser; each renders and transitions correctly.
+
+## UI mockups (`mockups/`)
+
+5 disposable, self-contained HTML comparison pages (Tailwind CDN, no build
+step) — each shows the same 3-screen flow (Upload → Processing → Results)
+in a different visual direction, per your "1 simple, 4 grand" brief. Open
+directly in a browser, e.g. `open mockups/3-saas-dashboard.html`.
+
+| # | File | Direction | Feel |
+|---|---|---|---|
+| 1 | `1-minimal-mono.html` | **Minimal Mono** (the simple one) | Black/white/one accent, huge whitespace, thin-divider list, inline progress bars |
+| 2 | `2-gov-trust.html` | Gov-Trust | Navy/gold official e-Governance portal, serif headings, bordered table |
+| 3 | `3-saas-dashboard.html` | Modern SaaS Dashboard | Dark sidebar, stat cards, confidence pill badges, split content/summary panel |
+| 4 | `4-map-forward.html` | Map-Forward | Split-screen: document preview + mock cadastral parcel map alongside fields |
+| 5 | `5-review-queue.html` | Review-Queue | Ticketing-tool aesthetic, flagged fields as actionable cards (Approve/Edit), auto-approved summary strip |
+
+**Pick one and I'll rebuild `frontend/src/app/page.tsx` to match it** — the
+current live frontend uses its own clean default UI (not one of these 5).
 
 ## Structure
 
