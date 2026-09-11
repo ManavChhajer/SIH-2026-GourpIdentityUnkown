@@ -28,6 +28,7 @@ Scoping estimate (functional-prototype tier, not built now): `.hermes/plans/2026
 | 11. Pending-review status + doc store (backend) | ✅ Done — `/api/documents`, `/approve`, `/boundary` endpoints, 10/10 tests passing |
 | 12. Gov Employee Portal (login + review + approve/hand-draw boundary) | ✅ Done — `/review/login`, `/review`, `/review/[id]`, verified live end-to-end |
 | 13. SQLite persistence (replace in-memory store) | ✅ Done — `backend/db.py` (SQLAlchemy), 15/15 tests passing, verified data survives a real backend restart |
+| 14. Uploader accounts (signup/login, "My Documents") | ✅ Done — `/account/login`, `/account`, real password-hashed accounts in SQLite, 24/24 tests passing, verified live end-to-end |
 
 **Live verification performed this session:**
 - `pytest` in `backend/`: **5 passed**
@@ -134,6 +135,46 @@ wiped on restart with no seed data.
   process, called `/api/documents` again — the document was still there
   with the correct status.
 
+## Uploader accounts — "My Documents"
+
+Separate from the Gov Employee Portal, the **person uploading scans** can
+now create a real account and come back later to see the status of
+everything they've submitted, instead of re-uploading every time.
+
+| Route | Purpose |
+|---|---|
+| `/account/login` | Sign up or log in (toggle link switches mode) |
+| `/account` | "My Documents" — every doc uploaded while signed in, with live status |
+
+**This is real auth, not mocked** (unlike the Gov Employee Portal):
+- `POST /api/auth/signup` / `POST /api/auth/login` — passwords are salted +
+  SHA-256 hashed and stored in a `users` SQLite table (demo-grade hashing,
+  not bcrypt/argon2 — fine for a hackathon demo, not for production).
+- Login returns a bearer-style token stored in `localStorage`; every
+  `/api/analyze` and `/api/documents?mine=true` call sends it as an
+  `X-Auth-Token` header.
+- `documents.owner_username` links each upload to its uploader. Uploading
+  while **not** signed in still works exactly as before (`owner_username`
+  is null) — accounts are opt-in, not required.
+- 24/24 backend tests passing (added `test_signup_then_login_roundtrip`,
+  duplicate-username rejection, wrong-password rejection, and the
+  upload-with-token-then-`mine=true`-filters-correctly path).
+
+**Verified live end-to-end** (real browser session): signed up as a new
+user → redirected to `/account` (empty state) → went to `/` (header now
+shows "My Documents (username)") → uploaded a scan → went back to
+`/account` → the document appeared with its real status and confidence,
+without re-uploading anything.
+
+**Bug caught and fixed during this verification:** the CORS middleware was
+restricting `allow_methods` to `["POST", "GET"]`, which blocks the browser's
+automatic `OPTIONS` preflight request that carries the custom `X-Auth-Token`
+header — every authenticated upload failed with "Failed to fetch" until
+this was widened to `allow_methods=["*"]`. Also had to delete a stale
+`land_records.db` created before the `users` table existed (SQLAlchemy
+`create_all` doesn't migrate existing tables) — a stale local DB from
+before this change will 500 on any auth-related call until deleted.
+
 ## Structure
 
 ```
@@ -142,8 +183,11 @@ wiped on restart with no seed data.
                  SQLite-backed (land_records.db, gitignored — runtime data) via SQLAlchemy
                  /api/analyze, /api/documents(+approve/boundary)
   frontend/      Next.js + TypeScript + Tailwind app (App Router)
-    src/lib/api.ts          typed fetch client (analyze/list/get/approve/boundary)
-    src/app/page.tsx        public upload -> loading -> results UI, shows pending status
+    src/lib/api.ts          typed fetch client (analyze/list/get/approve/boundary/auth)
+    src/lib/useAuth.ts      localStorage-backed auth hook for uploader accounts
+    src/app/page.tsx        public upload -> loading -> results UI, shows pending status + account header
+    src/app/account/login/  uploader signup/login
+    src/app/account/        "My Documents" — uploader's own document history
     src/app/UI1..5/home/    5 mockup design directions (iframe of public/mockups/*.html)
     src/app/review/login/   gov employee demo login
     src/app/review/         review queue dashboard

@@ -55,3 +55,45 @@ def test_save_boundary_persists_points_and_status():
 
 def test_update_status_missing_document_returns_none():
     assert db_module.update_status("doc_missing", "approved") is None
+
+
+def test_create_document_with_owner_username():
+    db_module.create_user("alice", "pw123")
+    doc = db_module.create_document("doc_e", "e.jpg", [], 0.5, True, "pending_review", owner_username="alice")
+    assert doc["owner_username"] == "alice"
+
+
+def test_list_documents_filters_by_owner():
+    db_module.create_user("bob", "pw123")
+    db_module.create_document("doc_f", "f.jpg", [], 0.5, True, "pending_review", owner_username="bob")
+    db_module.create_document("doc_g", "g.jpg", [], 0.5, True, "pending_review", owner_username=None)
+
+    mine = db_module.list_documents(owner_username="bob")
+    assert [d["document_id"] for d in mine] == ["doc_f"]
+
+
+def test_create_user_rejects_duplicate_username():
+    first = db_module.create_user("carol", "pw123")
+    assert first is not None
+    second = db_module.create_user("carol", "other")
+    assert second is None
+
+
+def test_authenticate_user_success_and_failure():
+    db_module.create_user("dave", "correct-pw")
+    ok = db_module.authenticate_user("dave", "correct-pw")
+    assert ok is not None
+    assert ok["username"] == "dave"
+
+    bad = db_module.authenticate_user("dave", "wrong-pw")
+    assert bad is None
+
+    missing = db_module.authenticate_user("nobody", "whatever")
+    assert missing is None
+
+
+def test_get_user_by_token_roundtrip():
+    result = db_module.create_user("erin", "pw123")
+    username = db_module.get_user_by_token(result["token"])
+    assert username == "erin"
+    assert db_module.get_user_by_token("bogus-token") is None

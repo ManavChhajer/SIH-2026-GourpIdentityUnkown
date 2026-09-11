@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { analyzeDocument, type AnalyzeResult } from "@/lib/api";
+import { useAuth } from "@/lib/useAuth";
 import Link from "next/link";
 
 type Status = "idle" | "loading" | "done" | "error";
@@ -33,6 +34,7 @@ function StatusPill({ status }: { status: AnalyzeResult["status"] }) {
 }
 
 export default function Home() {
+  const { username, ready, clearSession } = useAuth();
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,12 +72,37 @@ export default function Home() {
               Upload a Khata/Khasra page scan to extract structured fields with confidence scoring.
             </p>
           </div>
-          <Link
-            href="/review/login"
-            className="shrink-0 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            Gov Employee Portal →
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            {ready && username ? (
+              <>
+                <Link
+                  href="/account"
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  My Documents ({username})
+                </Link>
+                <button
+                  onClick={clearSession}
+                  className="text-xs text-slate-400 hover:text-slate-600 px-2"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/account/login"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Sign in to track your documents
+              </Link>
+            )}
+            <Link
+              href="/review/login"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Gov Employee Portal →
+            </Link>
+          </div>
         </div>
       </header>
 

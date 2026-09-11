@@ -20,9 +20,47 @@ export interface AnalyzeResult {
   review_required: boolean;
   status: DocumentStatus;
   boundary: number[][] | null;
+  owner_username: string | null;
+}
+
+export interface AuthResult {
+  username: string;
+  token: string;
 }
 
 const API_BASE_URL = "http://localhost:8000";
+
+function authHeaders(): HeadersInit {
+  if (typeof window === "undefined") return {};
+  const token = window.localStorage.getItem("auth_token");
+  return token ? { "X-Auth-Token": token } : {};
+}
+
+export async function signup(username: string, password: string): Promise<AuthResult> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.detail || "Sign up failed");
+  }
+  return response.json();
+}
+
+export async function login(username: string, password: string): Promise<AuthResult> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.detail || "Login failed");
+  }
+  return response.json();
+}
 
 export async function analyzeDocument(file: File): Promise<AnalyzeResult> {
   const formData = new FormData();
@@ -30,6 +68,7 @@ export async function analyzeDocument(file: File): Promise<AnalyzeResult> {
 
   const response = await fetch(`${API_BASE_URL}/api/analyze`, {
     method: "POST",
+    headers: authHeaders(),
     body: formData,
   });
 
@@ -40,11 +79,18 @@ export async function analyzeDocument(file: File): Promise<AnalyzeResult> {
   return response.json();
 }
 
-export async function listDocuments(status?: DocumentStatus): Promise<AnalyzeResult[]> {
-  const url = status
-    ? `${API_BASE_URL}/api/documents?status=${status}`
-    : `${API_BASE_URL}/api/documents`;
-  const response = await fetch(url);
+export async function listDocuments(opts?: {
+  status?: DocumentStatus;
+  mine?: boolean;
+}): Promise<AnalyzeResult[]> {
+  const params = new URLSearchParams();
+  if (opts?.status) params.set("status", opts.status);
+  if (opts?.mine) params.set("mine", "true");
+  const qs = params.toString();
+  const response = await fetch(
+    `${API_BASE_URL}/api/documents${qs ? `?${qs}` : ""}`,
+    { headers: authHeaders() }
+  );
   if (!response.ok) throw new Error("Failed to list documents");
   const body = await response.json();
   return body.documents;
