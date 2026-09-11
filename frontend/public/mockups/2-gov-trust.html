@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Gov-Trust — Land Record Digitizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Source Sans 3', sans-serif; background: #f4f6f8; color: #1c2b3a; }
+  header { background: #0b2a4a; color: #fff; padding: 18px 40px; display: flex; align-items: center; gap: 14px; border-bottom: 4px solid #c9a15a; }
+  .seal { width: 36px; height: 36px; border-radius: 50%; background: #c9a15a; display:flex;align-items:center;justify-content:center; font-weight:700; color:#0b2a4a; }
+  header h1 { font-family: 'Merriweather', serif; font-size: 19px; }
+  header p { font-size: 12px; color: #cbd8e6; }
+  .wrap { max-width: 780px; margin: 40px auto; padding: 0 24px; }
+  .card { background: #fff; border: 1px solid #d8dee5; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .card-head { background: #eef2f6; padding: 14px 24px; border-bottom: 1px solid #d8dee5; font-family: 'Merriweather', serif; font-size: 15px; font-weight: 700; }
+  .card-body { padding: 32px 24px; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .upload-box { border: 2px dashed #b7c2cc; padding: 60px 24px; text-align: center; }
+  .btn { background: #0b2a4a; color: #fff; border: none; padding: 12px 28px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn:hover { background: #143d68; }
+  .btn.ghost { background: #fff; color: #0b2a4a; border: 1px solid #0b2a4a; margin-top: 24px; }
+  .spinner { width: 22px; height: 22px; border: 3px solid #d8dee5; border-top-color: #0b2a4a; border-radius: 50%; margin: 0 auto 16px; animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 12px 14px; border: 1px solid #d8dee5; }
+  th { background: #eef2f6; font-family: 'Merriweather', serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .conf { font-weight: 700; }
+  .conf.high { color: #1a7a3c; }
+  .conf.mid { color: #b8860b; }
+  .conf.low { color: #b32020; }
+  .banner { background: #fdf3e3; border: 1px solid #e6c67a; color: #7a5410; padding: 12px 18px; margin-bottom: 20px; font-size: 13px; font-weight: 600; }
+  .footer-note { font-size: 11px; color: #6b7c8c; margin-top: 20px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <div class="seal">LR</div>
+  <div>
+    <h1>Department of Land Records — Digitization Portal</h1>
+    <p>Government of Telangana &middot; e-Governance Initiative</p>
+  </div>
+</header>
+<div class="wrap">
+  <div class="card">
+    <div class="card-head">Document Digitization Request</div>
+    <div class="card-body">
+      <div id="idle" class="section active">
+        <div class="upload-box">
+          <p style="margin-bottom:20px;color:#5a6b7a;">Submit a scanned Khata / Khasra page for automated field extraction</p>
+          <button class="btn" onclick="showState('processing')">Upload Document</button>
+        </div>
+      </div>
+      <div id="processing" class="section">
+        <div class="upload-box">
+          <div class="spinner"></div>
+          <p style="color:#5a6b7a;">Processing document — running OCR &amp; field extraction…</p>
+        </div>
+      </div>
+      <div id="results" class="section">
+        <div class="banner" id="banner" style="display:none;">⚠ This record requires manual review — one or more fields below confidence threshold.</div>
+        <table>
+          <tr><th>Field</th><th>Extracted Value</th><th>Confidence</th></tr>
+          <tr><td>Khata No.</td><td>213/A</td><td class="conf high">94%</td></tr>
+          <tr><td>Khasra No.</td><td>402</td><td class="conf high">88%</td></tr>
+          <tr><td>Survey No.</td><td>17-B</td><td class="conf low">61%</td></tr>
+          <tr><td>Owner Name</td><td>R. Venkataiah</td><td class="conf high">97%</td></tr>
+          <tr><td>Area (acres)</td><td>2.35</td><td class="conf mid">72%</td></tr>
+          <tr><td>Mutation</td><td>Pending</td><td class="conf low">55%</td></tr>
+        </table>
+        <button class="btn ghost" onclick="reset()">Submit Another Document</button>
+      </div>
+    </div>
+  </div>
+  <p class="footer-note">This is a demonstration portal. Extracted data is not stored in any official land record system.</p>
+</div>
+<script>
+  function showState(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (id === 'processing') {
+      setTimeout(() => { showState('results'); document.getElementById('banner').style.display = 'block'; }, 1600);
+    }
+  }
+  function reset() { showState('idle'); }
+</script>
+</body>
+</html>

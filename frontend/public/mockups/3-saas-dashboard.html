@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>SaaS Dashboard — Land Record Digitizer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .spinner { border: 3px solid #334155; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+<div class="flex min-h-screen">
+  <aside class="w-60 bg-slate-900 text-slate-300 flex flex-col p-5">
+    <div class="flex items-center gap-2 mb-10">
+      <div class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-white">L</div>
+      <span class="text-white font-semibold">LandDigitize</span>
+    </div>
+    <nav class="space-y-1 text-sm">
+      <div class="bg-slate-800 text-white rounded-lg px-3 py-2 font-medium">📄 Documents</div>
+      <div class="px-3 py-2 hover:bg-slate-800 rounded-lg cursor-pointer">🗺️ Parcels</div>
+      <div class="px-3 py-2 hover:bg-slate-800 rounded-lg cursor-pointer">🔍 Review Queue</div>
+      <div class="px-3 py-2 hover:bg-slate-800 rounded-lg cursor-pointer">📊 Analytics</div>
+      <div class="px-3 py-2 hover:bg-slate-800 rounded-lg cursor-pointer">⚙️ Settings</div>
+    </nav>
+    <div class="mt-auto text-xs text-slate-500">v0.1 mock demo</div>
+  </aside>
+
+  <main class="flex-1 p-8">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">Document Analysis</h1>
+        <p class="text-sm text-slate-500">Upload and extract structured fields from land record scans.</p>
+      </div>
+      <div class="flex gap-4 text-center">
+        <div class="bg-white rounded-xl border border-slate-200 px-4 py-2"><div class="text-lg font-bold">1,204</div><div class="text-xs text-slate-500">Processed</div></div>
+        <div class="bg-white rounded-xl border border-slate-200 px-4 py-2"><div class="text-lg font-bold text-amber-600">37</div><div class="text-xs text-slate-500">In Review</div></div>
+      </div>
+    </div>
+
+    <div id="idle" class="section active">
+      <div class="bg-white rounded-2xl border-2 border-dashed border-slate-300 p-16 text-center">
+        <div class="text-4xl mb-4">📤</div>
+        <p class="text-slate-500 mb-5">Drag & drop a scanned document, or</p>
+        <button onclick="showState('processing')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-lg font-semibold text-sm">Browse files</button>
+      </div>
+    </div>
+
+    <div id="processing" class="section">
+      <div class="bg-white rounded-2xl border border-slate-200 p-16 text-center">
+        <div class="spinner w-10 h-10 mx-auto mb-5"></div>
+        <p class="font-medium">Running OCR + NER pipeline…</p>
+        <p class="text-sm text-slate-500 mt-1">This usually takes a few seconds</p>
+      </div>
+    </div>
+
+    <div id="results" class="section">
+      <div id="banner" class="hidden bg-amber-50 border border-amber-300 text-amber-800 rounded-xl px-4 py-3 mb-5 text-sm font-medium">⚠ Low-confidence fields detected — route this document to review.</div>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="col-span-2 bg-white rounded-2xl border border-slate-200 p-6">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="font-semibold">Extracted Fields</h2>
+            <span class="text-xs text-slate-400">khata_page_03.jpg</span>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3"><span class="text-sm text-slate-500">Khata No.</span><span class="font-medium">213/A</span><span class="text-xs font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">94%</span></div>
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3"><span class="text-sm text-slate-500">Khasra No.</span><span class="font-medium">402</span><span class="text-xs font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">88%</span></div>
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3"><span class="text-sm text-slate-500">Survey No.</span><span class="font-medium">17-B</span><span class="text-xs font-bold px-2 py-1 rounded-full bg-rose-100 text-rose-700">61%</span></div>
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3"><span class="text-sm text-slate-500">Owner Name</span><span class="font-medium">R. Venkataiah</span><span class="text-xs font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">97%</span></div>
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3"><span class="text-sm text-slate-500">Area (acres)</span><span class="font-medium">2.35</span><span class="text-xs font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-700">72%</span></div>
+            <div class="flex items-center justify-between pb-1"><span class="text-sm text-slate-500">Mutation</span><span class="font-medium">Pending</span><span class="text-xs font-bold px-2 py-1 rounded-full bg-rose-100 text-rose-700">55%</span></div>
+          </div>
+          <button onclick="reset()" class="mt-6 border border-slate-300 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-50">Upload another</button>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-6">
+          <h2 class="font-semibold mb-4">Overall confidence</h2>
+          <div class="text-4xl font-bold text-indigo-600 mb-1">78%</div>
+          <div class="w-full bg-slate-100 rounded-full h-2 mb-4"><div class="bg-indigo-500 h-2 rounded-full" style="width:78%"></div></div>
+          <p class="text-xs text-slate-500">6 of 6 fields extracted. 2 fields below 70% threshold.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+  function showState(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (id === 'processing') {
+      setTimeout(() => { showState('results'); document.getElementById('banner').classList.remove('hidden'); }, 1500);
+    }
+  }
+  function reset() { showState('idle'); }
+</script>
+</body>
+</html>
