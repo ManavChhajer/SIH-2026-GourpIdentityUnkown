@@ -51,7 +51,26 @@ directly in a browser, e.g. `open mockups/3-saas-dashboard.html`.
 | 5 | `5-review-queue.html` | Review-Queue | Ticketing-tool aesthetic, flagged fields as actionable cards (Approve/Edit), auto-approved summary strip |
 
 **Pick one and I'll rebuild `frontend/src/app/page.tsx` to match it** — the
-current live frontend uses its own clean default UI (not one of these 5).
+current live frontend (`/`) uses its own clean default UI (not one of these 5).
+
+### Live routes (served from the Next.js app itself)
+
+Each mockup is also mounted as its own route inside the Next.js app (static
+HTML copied to `frontend/public/mockups/`, each route is a thin page that
+iframes its file). This means deleting a direction later is just: delete
+`frontend/src/app/UIn/` + its file in `frontend/public/mockups/` — no other
+code changes needed.
+
+| Route | Direction |
+|---|---|
+| http://localhost:3000/UI1/home | Minimal Mono (simple) |
+| http://localhost:3000/UI2/home | Gov-Trust |
+| http://localhost:3000/UI3/home | SaaS Dashboard |
+| http://localhost:3000/UI4/home | Map-Forward |
+| http://localhost:3000/UI5/home | Review-Queue |
+
+Same Next.js dev server as the live app (`npm run dev` in `frontend/`,
+already covered above) — no separate server needed.
 
 ## Structure
 
