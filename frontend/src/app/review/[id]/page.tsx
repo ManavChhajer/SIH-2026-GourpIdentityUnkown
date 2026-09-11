@@ -11,6 +11,7 @@ import {
   type AnalyzeResult,
   type GovernmentRecord,
 } from "@/lib/api";
+import { PLOT_BBOXES } from "@/lib/plots";
 
 const CANVAS_W = 600;
 const CANVAS_H = 420;
@@ -179,7 +180,93 @@ export default function ReviewDocument() {
         </Link>
       </header>
 
-      <main className="max-w-5xl mx-auto p-8 grid grid-cols-5 gap-6">
+      <main className="max-w-6xl mx-auto p-8 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl border border-slate-300 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-sm text-slate-700">📤 Document uploaded by user</h2>
+              <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
+                AI-extracted, unverified
+              </span>
+            </div>
+            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 font-mono text-xs text-slate-700 space-y-1.5">
+              <p className="text-[10px] text-slate-400 mb-2">{doc.filename}</p>
+              {doc.fields.map((f) => (
+                <div key={f.name} className="flex justify-between gap-2">
+                  <span className="text-slate-500">{f.label}:</span>
+                  <span className="font-semibold">{f.value}</span>
+                </div>
+              ))}
+              <div className="flex justify-between gap-2 pt-1.5 mt-1.5 border-t border-slate-200 text-[10px] text-slate-400">
+                <span>Overall AI confidence</span>
+                <span>{Math.round(doc.overall_confidence * 100)}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-indigo-300 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-sm text-slate-700">🏛 Khata record on file with government</h2>
+              <span className="text-[10px] font-bold uppercase tracking-wide text-indigo-700 bg-indigo-100 rounded-full px-2 py-0.5">
+                Official record
+              </span>
+            </div>
+            {govRecord ? (
+              <div className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-4 font-mono text-xs text-slate-700 space-y-1.5">
+                <p className="text-[10px] text-slate-400 mb-2">
+                  {govRecord.plot_label} &middot; on file since {govRecord.on_file_since}
+                </p>
+                <div className="flex justify-between gap-2"><span className="text-slate-500">Khata No.:</span><span className="font-semibold">{govRecord.khata_no}</span></div>
+                <div className="flex justify-between gap-2"><span className="text-slate-500">Khasra No.:</span><span className="font-semibold">{govRecord.khasra_no}</span></div>
+                <div className="flex justify-between gap-2"><span className="text-slate-500">Survey No.:</span><span className="font-semibold">{govRecord.survey_no}</span></div>
+                <div className="flex justify-between gap-2"><span className="text-slate-500">Owner Name:</span><span className="font-semibold">{govRecord.owner_name}</span></div>
+                <div className="flex justify-between gap-2"><span className="text-slate-500">Area:</span><span className="font-semibold">{govRecord.area} acres</span></div>
+                <div className="flex justify-between gap-2"><span className="text-slate-500">Mutation:</span><span className="font-semibold">{govRecord.mutation}</span></div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-xs text-slate-400 text-center">
+                No matching official record on file for this document (not
+                linked to one of the 4 demo plots).
+              </div>
+            )}
+          </div>
+        </div>
+
+        {govRecord && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <h2 className="font-semibold text-sm text-slate-700 mb-3">
+              🗺 Plot location on the cadastral map — {govRecord.plot_label}
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <div className="rounded-lg border border-slate-300 overflow-hidden shrink-0">
+                <svg
+                  width="260"
+                  height="200"
+                  viewBox={`${PLOT_BBOXES[doc.plot_id ?? "1"]?.x ?? 0} ${PLOT_BBOXES[doc.plot_id ?? "1"]?.y ?? 0} ${PLOT_BBOXES[doc.plot_id ?? "1"]?.w ?? 600} ${PLOT_BBOXES[doc.plot_id ?? "1"]?.h ?? 420}`}
+                >
+                  <image href="/dummy-land.svg" x="0" y="0" width="600" height="420" />
+                  {PLOT_BBOXES[doc.plot_id ?? "1"] && (
+                    <polygon
+                      points={PLOT_BBOXES[doc.plot_id ?? "1"].polygon.map((p) => p.join(",")).join(" ")}
+                      fill="rgba(220, 38, 38, 0.18)"
+                      stroke="#dc2626"
+                      strokeWidth={3}
+                    />
+                  )}
+                </svg>
+              </div>
+              <div className="text-xs text-slate-500 space-y-1">
+                <p>Zoomed view of {govRecord.plot_label} on the full cadastral map, outlined in red.</p>
+                <p className="text-slate-400">
+                  Full map is also the sketch surface below, for hand-drawing a
+                  corrected boundary if the AI's parcel outline needs a fix.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-5 gap-6">
         <div className="col-span-3 bg-white rounded-2xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-sm">Dummy land image — mark boundary</h2>
@@ -320,6 +407,7 @@ export default function ReviewDocument() {
               <p className="text-xs font-semibold text-indigo-600 mt-3">{message}</p>
             )}
           </div>
+        </div>
         </div>
       </main>
     </div>

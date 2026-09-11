@@ -207,6 +207,19 @@ record says `901/B`) and `area` (AI said `4.60`, government record says
 Separately verified Plot B (clean fixture, no seeded errors) — all 6 fields
 showed `✓ match`.
 
+**Follow-up: parallel document view + map** — the review page now leads
+with two side-by-side cards (📤 what the user uploaded / AI extracted vs 🏛
+the official khata record on file with the government), plus a zoomed
+cadastral-map view (cropped `<svg><image>` of `dummy-land.svg`, using
+per-plot bounding boxes in `frontend/src/lib/plots.ts`) with the relevant
+plot outlined in red. The AI-vs-government match table stays below as the
+detailed field-by-field breakdown. Documents not linked to a demo plot
+(real uploads) gracefully show "No matching official record on file"
+instead of the government card/map. Verified live: Plot C parallel view
+correctly showed both documents side-by-side with differing khasra_no/area
+values, map zoomed to Plot C's bounding box with red outline; a real
+(non-plot) upload correctly fell back to the "no matching record" state.
+
 ## Structure
 
 ```
