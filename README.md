@@ -27,6 +27,7 @@ Scoping estimate (functional-prototype tier, not built now): `.hermes/plans/2026
 | 10. 5 mockups mounted as `/UIn/home` routes | ✅ Done — deletable independently, no separate server |
 | 11. Pending-review status + doc store (backend) | ✅ Done — `/api/documents`, `/approve`, `/boundary` endpoints, 10/10 tests passing |
 | 12. Gov Employee Portal (login + review + approve/hand-draw boundary) | ✅ Done — `/review/login`, `/review`, `/review/[id]`, verified live end-to-end |
+| 13. SQLite persistence (replace in-memory store) | ✅ Done — `backend/db.py` (SQLAlchemy), 15/15 tests passing, verified data survives a real backend restart |
 
 **Live verification performed this session:**
 - `pytest` in `backend/`: **5 passed**
@@ -111,12 +112,35 @@ both outcomes afterward.
 credentials work, session is just a `sessionStorage` flag with no
 server-side validation or token. Fine for a demo, not for production.
 
+## Database
+
+Documents now persist in **SQLite** (`backend/land_records.db`, via
+SQLAlchemy — `backend/db.py`) instead of an in-memory dict, so **uploaded
+records survive a backend restart**. This was the fix for "there's no
+pending document" — that was never a bug, it was in-memory state getting
+wiped on restart with no seed data.
+
+- One table (`documents`): `document_id`, `filename`, `processed_at`,
+  `fields_json`, `overall_confidence`, `review_required`, `status`,
+  `boundary_json`. `fields`/`boundary` are stored as JSON text columns —
+  deliberately simple for a demo, not a normalized schema.
+- `backend/land_records.db` is gitignored (runtime data, not source) —
+  everyone who clones this gets a fresh empty DB; upload a few scans after
+  first start.
+- 15/15 backend tests passing (`backend/test_db.py` + updated
+  `test_main.py`, both run against a throwaway SQLite file per test via
+  `backend/conftest.py`, never touching the real demo DB).
+- **Verified live**: uploaded a low-confidence doc, restarted the uvicorn
+  process, called `/api/documents` again — the document was still there
+  with the correct status.
+
 ## Structure
 
 ```
 2026-09-11_SIH/
-  backend/       FastAPI mock API (fixtures.py, main.py, tests) — venv included, gitignored
-                 in-memory DOCUMENTS store, /api/analyze, /api/documents(+approve/boundary)
+  backend/       FastAPI mock API (fixtures.py, main.py, db.py, tests) — venv included, gitignored
+                 SQLite-backed (land_records.db, gitignored — runtime data) via SQLAlchemy
+                 /api/analyze, /api/documents(+approve/boundary)
   frontend/      Next.js + TypeScript + Tailwind app (App Router)
     src/lib/api.ts          typed fetch client (analyze/list/get/approve/boundary)
     src/app/page.tsx        public upload -> loading -> results UI, shows pending status

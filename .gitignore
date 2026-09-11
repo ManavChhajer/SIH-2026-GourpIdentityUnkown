@@ -1,5 +1,6 @@
 backend/venv/
 backend/__pycache__/
 backend/.pytest_cache/
+backend/land_records.db
 frontend/node_modules/
 frontend/.next/
