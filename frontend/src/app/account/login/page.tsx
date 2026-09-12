@@ -84,6 +84,7 @@ export default function AccountLogin() {
         </form>
 
         <button
+          type="button"
           onClick={() => {
             setMode(mode === "login" ? "signup" : "login");
             setError(null);
