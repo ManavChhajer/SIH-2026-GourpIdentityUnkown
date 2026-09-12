@@ -68,7 +68,7 @@ export default function ReviewDocument() {
   useEffect(() => {
     draw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, bgLoaded]);
+  }, [points, bgLoaded, doc]);
 
   function draw() {
     const canvas = canvasRef.current;
