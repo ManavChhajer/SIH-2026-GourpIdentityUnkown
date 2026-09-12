@@ -41,7 +41,12 @@ export interface AuthResult {
   token: string;
 }
 
-const API_BASE_URL = "http://localhost:8000";
+// Use the same hostname the frontend was loaded from, so this works both on
+// localhost and when accessed over LAN from another device.
+const API_BASE_URL =
+  typeof window !== "undefined"
+    ? `http://${window.location.hostname}:8000`
+    : "http://localhost:8000";
 
 function authHeaders(): HeadersInit {
   if (typeof window === "undefined") return {};

@@ -10,6 +10,7 @@ export default function ReviewDashboard() {
   const [employee, setEmployee] = useState<string | null>(null);
   const [docs, setDocs] = useState<AnalyzeResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const emp = sessionStorage.getItem("gov_employee");
@@ -23,9 +24,16 @@ export default function ReviewDashboard() {
 
   async function loadDocs() {
     setLoading(true);
+    setError(null);
     try {
       const all = await listDocuments();
       setDocs(all);
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? `Could not reach the server: ${e.message}. Check that the backend (port 8000) is reachable from this device.`
+          : "Could not reach the server."
+      );
     } finally {
       setLoading(false);
     }
@@ -71,7 +79,13 @@ export default function ReviewDashboard() {
 
         {loading && <p className="text-sm text-slate-500">Loading…</p>}
 
-        {!loading && pending.length === 0 && (
+        {error && (
+          <div className="bg-rose-50 border border-rose-300 text-rose-700 rounded-xl p-4 text-sm mb-6">
+            ⚠ {error}
+          </div>
+        )}
+
+        {!loading && !error && pending.length === 0 && (
           <div className="bg-white rounded-xl border border-slate-200 p-10 text-center text-sm text-slate-500">
             No documents pending review. Upload a low-confidence scan on the{" "}
             <Link href="/" className="text-indigo-600 font-semibold hover:underline">
